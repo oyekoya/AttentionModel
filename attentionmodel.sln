@@ -1,0 +1,31 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "attentionmodel", "attentionmodel.vcproj", "{AEEE8A9A-2AA0-46A3-8B8E-468AEACD05DE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "load_model_dll", "load_model_dll.vcproj", "{04378493-C1B8-465B-ACBC-8ECD306126E9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "load_model_lib", "load_model_lib.vcproj", "{12958D7D-7F7B-4701-A8BB-F00E1C2D617F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AEEE8A9A-2AA0-46A3-8B8E-468AEACD05DE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AEEE8A9A-2AA0-46A3-8B8E-468AEACD05DE}.Debug|Win32.Build.0 = Debug|Win32
+		{AEEE8A9A-2AA0-46A3-8B8E-468AEACD05DE}.Release|Win32.ActiveCfg = Release|Win32
+		{AEEE8A9A-2AA0-46A3-8B8E-468AEACD05DE}.Release|Win32.Build.0 = Release|Win32
+		{04378493-C1B8-465B-ACBC-8ECD306126E9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{04378493-C1B8-465B-ACBC-8ECD306126E9}.Debug|Win32.Build.0 = Debug|Win32
+		{04378493-C1B8-465B-ACBC-8ECD306126E9}.Release|Win32.ActiveCfg = Release|Win32
+		{04378493-C1B8-465B-ACBC-8ECD306126E9}.Release|Win32.Build.0 = Release|Win32
+		{12958D7D-7F7B-4701-A8BB-F00E1C2D617F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12958D7D-7F7B-4701-A8BB-F00E1C2D617F}.Debug|Win32.Build.0 = Debug|Win32
+		{12958D7D-7F7B-4701-A8BB-F00E1C2D617F}.Release|Win32.ActiveCfg = Release|Win32
+		{12958D7D-7F7B-4701-A8BB-F00E1C2D617F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

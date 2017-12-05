@@ -1,0 +1,356 @@
+/* Include s3d symbols */
+#include <Script3d.h>
+#include <Camera.s3d.h>
+
+//#define VA_TRANS
+#define DQUAT_TRANSF_XVRSHADER
+
+#include "Common.s3d"
+
+var selectedBone=0;
+static var accuQuat=AxisAngletoQuat([1,0,0,0.0]);
+var TPoseQuats;
+
+#include "Avatars.s3d"
+#include "KeyBoardManager.s3d"
+
+
+
+/* Set global scene parameters */
+SET SCENE_FOV  = 60;
+SET SCENE_NEAR = 0.01;
+SET SCENE_FAR  = 500;
+
+
+
+
+
+var xQuat=AxisAngletoQuat([1,0,0,0.031415]);
+var yQuat=AxisAngletoQuat([0,1,0,0.031415]);
+var zQuat=AxisAngletoQuat([0,0,1,0.031415]);
+var mxQuat=AxisAngletoQuat([1,0,0,-0.031415]);
+var myQuat=AxisAngletoQuat([0,1,0,-0.031415]);
+var mzQuat=AxisAngletoQuat([0,0,1,-0.031415]);
+
+var KeyManager=CVmKeyBoardManager();
+
+var natNetConnected = 0;
+
+var bonestate={};
+var newbonestate;
+var absbonestate={};
+
+
+// TODO: put your global variables here
+
+
+/* Function declarations */
+
+function OnDownload()
+{
+	// TODO: download your resources here
+	// E.g.: FileDownload("resource.ext");
+}
+
+function DrawBBox(p){
+	glPushAttrib(GL_LIGHTING|GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+//	glDisable(GL_DEPTH_TEST);
+	glLineWidth(3.0);
+	glColor(1.0, 0.0, 0.0,1.0);
+	glBegin(GL_LINES);
+	  glVertex(p[0]);glVertex(p[1]);
+	  glVertex(p[0]);glVertex(p[2]);
+	  glVertex(p[1]);glVertex(p[3]);
+	  glVertex(p[2]);glVertex(p[3]);
+  	  glVertex(p[4]);glVertex(p[5]);
+	  glVertex(p[4]);glVertex(p[6]);
+	  glVertex(p[5]);glVertex(p[7]);
+	  glVertex(p[6]);glVertex(p[7]);
+	  glVertex(p[0]);glVertex(p[4]);
+	  glVertex(p[1]);glVertex(p[5]);
+	  glVertex(p[2]);glVertex(p[6]);
+	  glVertex(p[3]);glVertex(p[7]);  	
+	glEnd();
+	glPopAttrib();
+}
+
+
+function DrawBAxes(aid,id){
+	Var axlen=0.1;
+	Var bTrans=Vector(3);
+	Var xAx=Vector(3);
+	Var yAx=Vector(3);
+	Var zAx=Vector(3);
+	Var bMat=Vector(9);
+
+	Avatars.getTranslationAbs(aid,id,&bTrans);
+	Avatars.getRotationMatrixAbs(aid,id,&bMat);
+//	Avatars.getRotationMatrixAbs(aid,id,&bMat);
+/*	var bQuat=[0,0,0,0];
+	Avatars.getRotationAbs(aid,id,&bQuat);
+	bQuat=transformquat(TPoseQuats[id], bQuat);
+	bMat=QuaternionToMatrix3(bQuat);*/
+	xAx[0]=bMat[0];xAx[1]=bMat[3];xAx[2]=bMat[6];
+	yAx[0]=bMat[1];yAx[1]=bMat[4];yAx[2]=bMat[7];
+	zAx[0]=bMat[2];zAx[1]=bMat[5];zAx[2]=bMat[8];
+	
+	//outPutLn("bMat=",bMat);
+
+	glPushAttrib(GL_LIGHTING|GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+	if (id==selectedBone)
+		glLineWidth(10.0);
+	else
+		glLineWidth(3.0);
+		
+	glColor(1.0, 0.0, 0.0,1.0);
+	glBegin(GL_LINES);
+	  glVertex(bTrans);
+      glVertex(bTrans+xAx*axlen);
+	glEnd();
+	glColor(0.0, 1.0, 0.0,1.0);
+	glBegin(GL_LINES);
+	  glVertex(bTrans);
+      glVertex(bTrans+yAx*axlen);
+	glEnd();
+	glColor(0.0, 0.0, 1.0,1.0);
+	glBegin(GL_LINES);
+	  glVertex(bTrans);
+      glVertex(bTrans+zAx*axlen);
+	glEnd();
+	glPopAttrib();
+}
+
+function drawAllBoneAxes(aid){
+	for (var i=0;i<avatars.getNumBone(aid);i++){
+	//	if (i==10){
+			DrawBAxes(aid,i);
+	//	}
+	}
+}
+
+function drawAllBoneBoxes(aid){
+	for (var j=0;j<avatars.getNumBone(aid);j++){
+	  //  var j=0;
+		var bbvec=vector(24);
+	//	avatars.getBoneBB(0,avatars.getBoneId(0,"Head"),&bbvec);
+		avatars.updateBoneBB(aid,j);
+		avatars.getBoneBB(aid,j,&bbvec);
+		var bb3vec={};
+		if (j==10||j==34||j==11||j==35){
+			for (var i=7;i>=0;i--){
+				aadd(bb3vec,[bbvec[i*3],bbvec[i*3+1],bbvec[i*3+2]]);
+			}
+	/*	outputln("bounding box:");
+		for (var i=0;i<8;i++){
+			outputln(bb3vec[i]);
+		}
+	*/	
+		DrawBBox(bb3vec);
+		}
+	}
+}
+
+#define _EPSILON 0.0001
+//gets the unit quaternion from quat
+function normQuat( quat ){
+       var oolen        = 1.0/sqrt(quat* quat);
+       var res         = quat*oolen;
+       for(var i=0;i<4;i++){
+               if(abs(res[i]) < _EPSILON)
+                       res[i] = 0.0;
+       }
+       return res;
+}
+
+function conjquat(q){
+	return [q[0],q[1],q[2],-q[3]];
+}
+
+function quatMul(a,b){
+	var v=[a[0],a[1],a[2]];
+	var u=[b[0],b[1],b[2]];
+	var rv=a[3]*u+b[3]*v+v^u;
+	return [rv[0],rv[1],rv[2],a[3]*b[3]-v*u];
+}
+
+//change coordinate system of quat to that of tquat
+function transformquat(tq,q){
+   return quatmul(tq,quatmul(q,conjquat(tq)));
+  // return q;
+}
+
+function getTPoseRots(avID){
+	TPoseQuats={};
+	for (var i=0;i<avatars.getNumBone(avID);i++){
+		var quat=[0,0,0,0];
+		avatars.getRotationAbs(avID,i,&quat);
+		quat=normquat(quat);
+		aadd(TPoseQuats,quat);
+			//outputln("quat",i,":",quat);
+	}			
+}
+
+
+function applyPose(avatarID,NNModelID){
+	var nsegs =50;
+	var pose = Vector(nsegs * 7);
+	var rotQuat = Vector(4);
+
+
+	var currQuat=vector(4);
+	//avatars.resetBone(avatarID, map[i]);
+//	avatars.resetBone(avatarID,selectedBone);
+	avatars.getRotation(avatarID, selectedBone,&currQuat);
+	var crotQuat=normquat(
+	                      quatmul(
+								  transformquat(TPoseQuats[selectedBone],accuQuat),
+								  currQuat
+								  )
+						  );
+//	var crotQuat=quatmul(accuQuat, currQuat);
+	avatars.setRotation(avatarID, selectedBone, crotQuat);
+	
+	reset accuQuat;
+	
+	avatars.setTranslation(avatarID, 0, [0,0,0]);
+	
+	//avatars.updateSkeleton(avatarID);
+}
+
+
+function incSelBone(value,mini,maxi){
+	//reset accuQuat;
+	selectedBone=selectedBone+value;
+	if (selectedBone<mini)selectedBone=mini;
+	if (selectedBone>maxi)selectedBone=maxi;
+}
+/*
+function quatMul(a,b){
+	var v=[a[0],a[1],a[2]];
+	var u=[b[0],b[1],b[2]];
+	var rv=a[3]*u+b[3]*v+v^u;
+	return [rv[0],rv[1],rv[2],a[3]*b[3]-v*u];
+}
+function conjquat(q){
+return [q[0],q[1],q[2],-q[3]];
+}
+
+//change coordinate system of quat to that of tquat
+function transformquat(tq,q){
+   return quatmul(quatmul(tq,q),conjquat(tq));
+}
+*/
+function RotSelBone( quat,dir){
+	accuQuat=quatMul(quat,accuQuat);
+	//accuQuat = quat;
+	//OutPutLn(selectedBone," : ",dir, " : ",accuQuat);
+}
+
+
+
+function OnInit(params)
+{
+	CameraSetPosition(0, 1, 5);
+	// TODO: put your initialization code here
+	setLocalDir();
+	
+	initAvatars();
+//	avatars.addCharacter("AMan0004Ori","AMan0004Ori.cfg");
+	avatars.addCharacter("AMan0004","AMan0004.cfg");
+//	avatars.addCharacter("CMan0005T2","CMan0005.cfg");
+//	avatars.addCharacter("BWom0002","BWom0002.cfg");
+	avatars.idle();
+	getTPoseRots(0);
+	
+	for (var i=0;i<avatars.getNumBone(0);i++){
+		var rot=[0,0,0,0];
+		var absrot=Vector(9);//[0,0,0,0];
+		avatars.getRotation(0,i,&rot);
+	    avatars.getRotationAbs(0,i,&absrot);
+		aadd(bonestate,rot);
+		aadd(absbonestate,absrot);
+	}
+	newBoneState=Array(len(bonestate));
+	for (var i=0;i<len(bonestate);i++){
+		newBoneState[i]=bonestate[i];
+	}
+
+	KeyManager.addKeyFunction("b",VK_LSHIFT,true,"incSelBone",{1,0,67},0,"increaseMorph boneid");
+	KeyManager.addKeyFunction("b",VK_LSHIFT,false,"incSelBone",{-1,0,67},0,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("x",VK_LSHIFT,true,"RotSelBone",{xQuat,1},2,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("x",VK_LSHIFT,false,"RotSelBone",{mxQuat,-1},2,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("y",VK_LSHIFT,true,"RotSelBone",{yQuat,1},2,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("y",VK_LSHIFT,false,"RotSelBone",{myQuat,-1},2,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("z",VK_LSHIFT,true,"RotSelBone",{zQuat,1},2,"decreaseMorph boneid");
+	KeyManager.addKeyFunction("z",VK_LSHIFT,false,"RotSelBone",{mzQuat,-1},2,"decreaseMorph boneid");
+	
+	avatars.setVertexWeightThreshold(0,0.3);
+	
+	outPutLn(TPoseQuats);
+}
+
+
+
+function OnFrame()
+{
+	/* manage camera */
+	CameraMoveMouse();
+
+	SceneBegin();
+	//avatars.idle();
+//	newBoneState=bonestate;
+	
+	applyPose(0,0);
+  
+//   reset accuquat;
+/*
+	newBoneState[selectedBone]=quatmul(transformquat(absbonestate[selectedBone],accuquat),newBoneState[selectedBone]);
+	reset accuquat;
+	for (i=0;i<avatars.getNumBone(0);i++){	
+	Avatars.setRotation(0,i,newBoneState[i]);
+	}
+*/	
+	#ifdef VA_TRANS
+    	avatars.draw(0);
+    #else
+    	skinShader.start();
+        Avatars.DrawExtShader();
+        skinshader.stop();
+    #endif
+    drawAllBoneAxes(0);
+	
+
+	
+	
+	//DrawArenaAxes(ArenaTPoseQuats);
+	//DrawArenaSkel();
+	//DrawGrid([0.5, 0.5, 0.5], 100);
+
+	// TODO: put your drawing code here
+
+	SceneEnd();
+	KeyManager.idle();
+}
+
+
+
+function DownloadReady(RequestID)
+{
+	// TODO
+}
+
+function OnTimer()
+{
+	// TODO:
+}
+
+function OnExit()
+{
+	// TODO: put your cleanup code here
+}
+
+
+

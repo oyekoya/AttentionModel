@@ -1,0 +1,146 @@
+#ifndef KEYBOARDMANAGER_S3D
+#define KEYBOARDMANAGER_S3D
+
+//! Keyboardmanager is a class that eases to link keyboard events with function calls
+/*
+*/
+
+class CVmKeyBoardManager
+{
+//! An array that contains the Key, FunctionName, FunctionParameters, a boolean to remember if the Key was pressed, a comment string
+	var KeyFunctionsTable;
+//! A boolean that specifies if a keyboard help text should be print on the console
+	var printHelpOn;
+//! wraps the callback function call with the parameters specified
+	CallFunction(idx);
+//! Add a new entry to the list of key function associations
+//! key  specifies the key to be associated
+//! special  specifies if CTRL or VK_LSHIFT has to be pressed as well to trigger event
+//! notSpecial  boolean that specifies if the special key has to be pressed or not pressed to trigger the event
+//! funct specifies the name of the function to be called if the key is pressed
+//! ktype specifies if the function is called the first time the key is pressed 0
+//! or if the key is released 1
+//! or the whole time while the key is pressed 2
+	addKeyFunction(key,special,notSpecial, funct, params,ktype, comment);
+//! Prints the help message on the console
+	printHelp();
+//! Checks the entries in the array and executes the relevant functions
+	idle();
+	
+};
+
+function CVmKeyBoardManager::CVmKeyBoardManager()
+{
+//! draw the object linked with the physical object
+/*!
+* This function draw the object only if there is a mesh linked
+* \param flags  contains a combination of one or more of the values contained in
+* the Flag Table (see XVR documentation).
+* \param x  can assume different meanings according to the active flag	
+* \param y  can assume different meanings according to the active flag
+*/ 
+	KeyFunctionsTable={};
+	printHelpOn=true;
+}
+
+function CVmKeyBoardManager::CallFunction(index){
+		
+	var KeyFunction=KeyFunctionsTable[index];	
+	var cbFuncName = KeyFunction[3];
+	var cbParamArray = KeyFunction[4];
+	var comment= KeyFunction[7];
+
+	
+					
+//	HUDprint("Calling callback function %s with %d parameters (%s)\n", cbFuncName, len(cbParamArray), comment);
+	switch (len(cbParamArray))			{
+	case 0: 
+		callback(cbFuncName);
+	break;
+	case 1:
+		callback(cbFuncName, cbParamArray[0]);
+	break;
+	case 2:
+		callback(cbFuncName, cbParamArray[0], cbParamArray[1]);
+	break;
+	case 3:
+		callback(cbFuncName, cbParamArray[0], cbParamArray[1], cbParamArray[2]);
+	break;
+	case 4:
+		callback(cbFuncName, cbParamArray[0], cbParamArray[1], cbParamArray[2], cbParamArray[3]);
+	break;
+	}
+					
+}
+
+function CVmKeyBoardManager::printHelp(){
+//	HUDclear();
+	if (printHelpOn) {
+//	HUDprint("K E Y   T A B L E\n");
+	
+	for (var i=0;i<len(KeyFunctionsTable);i++){
+	   var keyfunction=KeyFunctionsTable[i];
+//	   HUDprint("\t%s : %s \n",keyfunction[0],keyfunction[7]);
+	}
+	}
+
+}
+
+function CVmKeyBoardManager::addKeyFunction(key, special,notSpecial,funct, params, ktype, comment) {
+	if (valtype (funct) != "S"){
+//		HUDprint("ERROR in addKeyFunction: cbFuncName must be a string!");
+	}
+	else if (valtype (params) != "A") {
+//		HUDprint("ERROR in addKeyFunction: cbParamArray must be an array");
+	}
+	else {
+		aadd(KeyFunctionsTable, {key, special,notSpecial, funct, params, false, ktype,comment});
+	}
+}
+
+function CVmKeyBoardManager::idle(){
+	for (var i=0;i<len(KeyFunctionsTable);i++){
+		var KeyFunction=KeyFunctionsTable[i];
+		var KeyFunctionType=KeyFunction[6];
+		var notSpecial=KeyFunction[2];
+		var special=false;
+		if (KeyFunction[1]==0) special=true; //No special key needs to be pressed
+			else
+			if (notSpecial)
+				special=!keyPressed(KeyFunction[1]);
+			else
+				special=keyPressed(KeyFunction[1]);
+
+			switch (KeyFunctionType) {
+				case 0: //Function is called if key is released
+				if (keypressed(KeyFunction[0])&& special) {
+					KeyFunction[5]=true; //Remember the key was pressed
+				}
+				else if (KeyFunction[5]) { //Only execute command when key is released again
+					KeyFunction[5]=false;
+					CallFunction(i);
+				}
+				break;
+				case 1: //Function is called if key is pressed
+				if (keypressed(KeyFunction[0])&& special) {
+					if (!KeyFunction[5]){
+						KeyFunction[5]=true; //Remember the key was pressed
+						CallFunction(i);	//Execute command only first time when key is pressed
+					}
+				}
+				else if (KeyFunction[5]) { 
+					KeyFunction[5]=false;
+				}
+				break;
+				case 2: //Function is called while key is pressed
+				if (keypressed(KeyFunction[0]) && special) {
+						CallFunction(i);   //Execute each time key is pressed an idle is called.
+					}
+				break;
+			}
+	}
+	printHelp();
+}
+
+
+#endif //KEYBOARDMANAGER_S3D

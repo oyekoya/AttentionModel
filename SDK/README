@@ -1,0 +1,11 @@
+Files included in zip:
+
+attentionmodel.dll - DLL file
+attentionmodel.lib - static library file (use with model.h)
+LoadModelDll.cpp - simple file showing how to load the attention model dll. 
+LoadModelLib.cpp - simple file showing how to load the static library.
+model.h - Include file describing external functions
+
+See the section 4.5 and the source code (pp 87-104) of http://ooyekoy.people.clemson.edu/thesis/MScThesis.pdf to see how it was integrated into the Second Life source code.
+
+For more information, please contact Wole at ooyekoy@clemson.edu

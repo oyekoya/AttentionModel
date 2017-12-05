@@ -1,0 +1,51 @@
+Message logging of HALCA started
+
+------------
+got the following IDs
+------------
+
+envMap -1,
+tex 30
+bump -1
+quats 0
+trans 31
+texturecoord 1
+normal -1
+index 4
+weight 3
+vidtexturecoord -1
+vertexMorph0 -1
+normalMorph0 -1
+vertexMorph1 -1
+normalMorph1 -1
+vertexMorph2 -1
+normalMorph2 -1
+vertexMorph3 -1
+normalMorph3 -1
+vertexMorph4 -1
+normalMorph4 -1
+vertexMorph5 -1
+normalMorph5 -1
+vertexMorph6 -1
+normalMorph6 -1
+vertexMorph7 -1
+normalMorph7 -1
+
+------------
+Loading 'AMan0004.cfg' model ...
+Loading skeleton 'Skeleton.CSF'...
+Loading mesh 'AMan0004-Mesh.CMF'...
+Loading material 'AMan0004-Mesh_1.CRF'...
+Loading material 'AMan0004-Mesh_2.CRF'...
+Loading diffuse 'AMan0004-Body-D.jpg'...
+Loading diffuse 'AMan0004-Head-D.jpg'...
+Setting materials.
+Created model.
+Loading Model into VBO.
+Hardware Mesh number of Morphs: 0 
+Processing Mesh data:
+Done
+Hardware Mesh total faces: 4626 total vertices 3054
+Loading Model into VBO. Done.
+Loading shader data to model !
+Loading 'AMan0004.cfg' model completed!
